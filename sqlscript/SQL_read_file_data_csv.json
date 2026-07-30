@@ -1,0 +1,17 @@
+{
+	"name": "SQL_read_file_data_csv",
+	"properties": {
+		"content": {
+			"query": "\nSELECT * FROM OPENROWSET\n  (\n      BULK '/synapse-file/clintrail_data_files/TA/TA.csv',\n      DATA_SOURCE = 'ds_stsyn_file_data',\n      FORMAT = 'CSV',\n      PARSER_VERSION = '2.0',\n      HEADER_ROW = TRUE\n  )AS TA\n\nSELECT * FROM OPENROWSET\n  (\n      BULK '/synapse-file/clintrail_data_files/TA/TA.csv',\n      DATA_SOURCE = 'ds_stsyn_file_data',\n      FORMAT = 'CSV',\n      PARSER_VERSION = '2.0',\n      HEADER_ROW = TRUE\n  )AS TA WHERE price<100\n\n  SELECT *,UPPER(product)AS newprod FROM OPENROWSET\n  (\n      BULK '/synapse-file/clintrail_data_files/TA/TA.csv',\n      DATA_SOURCE = 'ds_stsyn_file_data',\n      FORMAT = 'CSV',\n      PARSER_VERSION = '2.0',\n      HEADER_ROW = TRUE\n  )AS TA\n  \n  \n  SELECT * FROM OPENROWSET\n  (\n      BULK '/synapse-file/clintrail_data_files/TS/TS.csv',\n      DATA_SOURCE = 'ds_stsyn_file_data',\n      FORMAT = 'CSV',\n      PARSER_VERSION = '2.0',\n      HEADER_ROW = TRUE\n  )AS TS\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "db_clintrail_dev",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

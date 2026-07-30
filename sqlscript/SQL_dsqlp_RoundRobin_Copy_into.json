@@ -1,0 +1,17 @@
+{
+	"name": "SQL_dsqlp_RoundRobin_Copy_into",
+	"properties": {
+		"content": {
+			"query": "CREATE TABLE dbo.LB\n(\n    STUDYID     VARCHAR(200),\n    DOMAIN      VARCHAR(200),\n    USUBJID     VARCHAR(200),\n    LBSEQ       VARCHAR(200),\n    LBTESTCD    VARCHAR(200),\n    LBTEST      VARCHAR(200),\n    LBCAT       VARCHAR(200),\n    LBORRES     VARCHAR(200),\n    LBORRESU    VARCHAR(200),\n    LBORNRLO    VARCHAR(200),\n    LBORNRHI    VARCHAR(200),\n    LBNRIND     VARCHAR(200),\n    VISITNUM    VARCHAR(200),\n    VISIT       VARCHAR(200),\n    LBDTC       VARCHAR(200),\n    MODIFIED_TS VARCHAR(200)\n)\nWITH\n(\n    DISTRIBUTION = ROUND_ROBIN\n);\n\n\nCOPY INTO [dbo].[lb] \nFROM 'https://stsynapsedev1999.blob.core.windows.net/synapse-file/clintrail_data_files/LB/LB.csv'\nWITH (\n    FIELDTERMINATOR = ',',\n    ROWTERMINATOR = '0x0A'\n)\nOPTION (LABEL = 'COPY: dbo.LB');\n\n\nSELECT COUNT(*) FROM LB;\n\nDBCC PDW_SHOWSPACEUSED('dbo.LB')\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "dsp_dev001",
+				"poolName": "dsp_dev001"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

@@ -1,0 +1,17 @@
+{
+	"name": "SQL_dsqlp_hash_Key_Copy_into",
+	"properties": {
+		"content": {
+			"query": "-- How to distribute the data across the compute node\n-- DISTRIBUTION Types\n-- 1. HASH KEY --- We need to specify the column=assured us same data will be in the same compute \n-- 2. ROUND_ROBIN==\n-- 3. REPLICATE\n--CRAETE TABLE FOR HASH KEY\nCREATE TABLE dbo.VS\n(\n    STUDYID VARCHAR(200),\n    DOMAIN VARCHAR(200),\n    USUBJID VARCHAR(200),\n    VSSEQ VARCHAR(200),\n    VSTESTCD VARCHAR(200),\n    VSTEST VARCHAR(200),\n    VSORRES VARCHAR(200),\n    VSORRESU VARCHAR(200),\n    VISITNUM VARCHAR(200),\n    VISIT VARCHAR(200),\n    VSDTC VARCHAR(200),\n    MODIFIED_TS VARCHAR(200)\n)\nWITH\n(\n    DISTRIBUTION = HASH(USUBJID),\n    CLUSTERED COLUMNSTORE INDEX\n);\n\n\nSELECT COUNT(*) FROM VS;\n\n--COPY DATA FROM ADLS\nCOPY INTO [dbo].[vs] \nFROM 'https://stsynapsedev1999.blob.core.windows.net/synapse-file/clintrail_data_files/VS/VS.csv'\nWITH (\n    FIELDTERMINATOR = ',',\n    ROWTERMINATOR = '0x0A'\n)\nOPTION (LABEL = 'COPY: dbo.VS');\n\n--SEE HOW IT DISTRIBUTED\nDBCC PDW_SHOWSPACEUSED('dbo.VS')\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "dsp_dev001",
+				"poolName": "dsp_dev001"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

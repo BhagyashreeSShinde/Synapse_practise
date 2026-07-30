@@ -1,0 +1,17 @@
+{
+	"name": "SQL_dedicated_pool_table_craetion",
+	"properties": {
+		"content": {
+			"query": "CREATE TABLE CustomerDetails (\n    customer_id INT,\n    name VARCHAR(100),\n    city VARCHAR(100),\n    total_spent DECIMAL(10,2)\n)WITH\n(\n    DISTRIBUTION = ROUND_ROBIN,\n    CLUSTERED COLUMNSTORE INDEX\n);\n\nSELECT * FROM CustomerDetails;\n\nINSERT INTO CustomerDetails (customer_id, name, city, total_spent)\nVALUES (1, 'Rahul', 'Pune', 1500.50);\n\nINSERT INTO CustomerDetails (customer_id, name, city, total_spent)\nVALUES (2, 'Sneha', 'Mumbai', 2450.75);\n\nINSERT INTO CustomerDetails (customer_id, name, city, total_spent)\nVALUES (3, 'Amit', 'Delhi', 3200.00);\n\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "dsp_dev001",
+				"poolName": "dsp_dev001"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

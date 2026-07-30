@@ -1,0 +1,17 @@
+{
+	"name": "Serverless_SQLpool_setup_database",
+	"properties": {
+		"content": {
+			"query": "CREATE DATABASE db_clintrail_dev;\nuse db_clintrail_dev;\n-- create master key that will protect the credentials:\nCREATE MASTER KEY ENCRYPTION BY PASSWORD = 'Clintraildev@1999'\n\n-- create credentials for containers in our demo storage account\nCREATE DATABASE SCOPED CREDENTIAL cred_db_clintrail_dev\nWITH IDENTITY = 'Managed Identity';\n\n--SECRET = 'sv=2022-11-02&ss=b&srt=co&sp=rl&se=2042-11-26T17:40:55Z&st=2024-11-24T09:40:55Z&spr=https&sig=DKZDuSeZhuCWP9IytWLQwu9shcI5pTJ%2Fw5Crw6fD%2BC8%3D'\n\n\nGO\nCREATE EXTERNAL DATA SOURCE ds_stsyn_file_data\nWITH (\n    LOCATION = 'https://stsynapsedev1999.blob.core.windows.net',\n    CREDENTIAL = cred_db_clintrail_dev\n);\n\nCREATE EXTERNAL DATA SOURCE ds_stsyn_clintrail\nWITH (\n    LOCATION = 'https://stclinicaltraildev.blob.core.windows.net',\n    CREDENTIAL = cred_db_clintrail_dev\n);\n\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "db_clintrail_dev",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

@@ -1,0 +1,17 @@
+{
+	"name": "SQL_dsqlp_Replicate_Copy_into",
+	"properties": {
+		"content": {
+			"query": "--small table sathi we used ll table\n\nCREATE TABLE dbo.TS\n(\n    STUDYID     VARCHAR(200),\n    DOMAIN      VARCHAR(200),\n    TSPARMCD    VARCHAR(200),\n    TSPARM      VARCHAR(200),\n    TSVAL       VARCHAR(200),\n    MODIFIED_TS VARCHAR(200)\n)\nWITH\n(\n    DISTRIBUTION = REPLICATE\n);\n\n\nCOPY INTO [dbo].[ts] \nFROM 'https://stsynapsedev1999.blob.core.windows.net/synapse-file/clintrail_data_files/TS/TS.csv'\nWITH (\n    FIELDTERMINATOR = ',',\n    ROWTERMINATOR = '0x0A'\n)\nOPTION (LABEL = 'COPY: dbo.TS');\n\n\nSELECT COUNT(*) FROM TS;\n\nDBCC PDW_SHOWSPACEUSED('dbo.TS')\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "dsp_dev001",
+				"poolName": "dsp_dev001"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
