@@ -12,6 +12,10 @@
 			"metadata": "Secure string for 'connectionString' of 'synws-synapse-dev-WorkspaceDefaultSqlServer'",
 			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=tcp:synws-synapse-dev.sql.azuresynapse.net,1433;Initial Catalog=@{linkedService().DBName}"
 		},
+		"ls_clintrail_data_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://stclinicaltraildev.dfs.core.windows.net/"
+		},
 		"synws-synapse-dev-WorkspaceDefaultStorage_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://stsynapsedev1999.dfs.core.windows.net"
@@ -21,6 +25,25 @@
 		"workspaceId": "[concat('Microsoft.Synapse/workspaces/', parameters('workspaceName'))]"
 	},
 	"resources": [
+		{
+			"name": "[concat(parameters('workspaceName'), '/ls_clintrail_data')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('ls_clintrail_data_properties_typeProperties_url')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
 		{
 			"name": "[concat(parameters('workspaceName'), '/synws-synapse-dev-WorkspaceDefaultSqlServer')]",
 			"type": "Microsoft.Synapse/workspaces/linkedServices",
@@ -94,12 +117,32 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/SQL_create_CETAS')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE EXTERNAL TABLE salesExternalTable\n(\n    [sale_id]   VARCHAR(50),\n    [product]   VARCHAR(100),\n    [category]  VARCHAR(50),\n    [quantity]  INT,\n    [price]     DECIMAL(18,2),\n    [sale_date] DATE,\n    [region]    VARCHAR(50)\n)\nWITH (\n    LOCATION = 'synapse-file/clintrail_data_files/TA/TA.csv',\n    DATA_SOURCE = ds_stsyn_file_data,\n    FILE_FORMAT = ff_csv\n);\n\nselect * from dbo.salesExternalTable",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "db_clintrail_dev",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/SQL_created_external_table')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"content": {
-					"query": "-- DROP EXTERNAL FILE FORMAT ff_csv\nCREATE EXTERNAL FILE FORMAT ff_csv\nWITH (  \n    FORMAT_TYPE = DELIMITEDTEXT,\n    FORMAT_OPTIONS ( FIELD_TERMINATOR = ',', STRING_DELIMITER = '\"', FIRST_ROW = 2   )\n);\n-- GO\n-- CREATE EXTERNAL FILE FORMAT ff_ParquetFormat WITH (  FORMAT_TYPE = PARQUET );\n-- GO\n-- CREATE EXTERNAL FILE FORMAT ff_DeltaLakeFormat WITH (  FORMAT_TYPE = DELTA );\n-- GO\n------------------------------------------------------------------------------------\nDROP EXTERNAL TABLE salesExternalTable;\n\nCREATE EXTERNAL TABLE salesExternalTable\n(\n    [sale_id]   VARCHAR(50),\n    [product]   VARCHAR(100),\n    [category]  VARCHAR(50),\n    [quantity]  INT,\n    [price]     DECIMAL(18,2),\n    [sale_date] DATE,\n    [region]    VARCHAR(50)\n)\nWITH (\n    LOCATION = 'synapse-file/clintrail_data_files/TA/TA.csv',\n    DATA_SOURCE = ds_stsyn_file_data,\n    FILE_FORMAT = ff_csv\n);\n\n\nselect * from dbo.salesExternalTable\nselect * from dbo.salesExternalTable where product='Laptop'\nselect quantity from dbo.salesExternalTable \n--******************DML OPERATIONS CANT PERFORM ON EXTERNAL TABLE*************",
+					"query": "-- DROP EXTERNAL FILE FORMAT ff_csv\nCREATE EXTERNAL FILE FORMAT ff_csv\nWITH (  \n    FORMAT_TYPE = DELIMITEDTEXT,\n    FORMAT_OPTIONS ( FIELD_TERMINATOR = ',', STRING_DELIMITER = '\"', FIRST_ROW = 2   )\n);\n-- GO\n-- CREATE EXTERNAL FILE FORMAT ff_ParquetFormat WITH (  FORMAT_TYPE = PARQUET );\n-- GO\n-- CREATE EXTERNAL FILE FORMAT ff_DeltaLakeFormat WITH (  FORMAT_TYPE = DELTA );\n-- GO\n------------------------------------------------------------------------------------\nDROP EXTERNAL TABLE salesExternalTable;\n\nCREATE EXTERNAL TABLE salesExternalTable\n(\n    [sale_id]   VARCHAR(50),\n    [product]   VARCHAR(100),\n    [category]  VARCHAR(50),\n    [quantity]  INT,\n    [price]     DECIMAL(18,2),\n    [sale_date] DATE,\n    [region]    VARCHAR(50)\n)\nWITH (\n    LOCATION = 'synapse-file/clintrail_data_files/TA/TA.csv',\n    DATA_SOURCE = ds_stsyn_file_data,\n    FILE_FORMAT = ff_csv\n);\n\n\nselect * from dbo.salesExternalTable\nselect * from dbo.salesExternalTable where product='Laptop'\nselect quantity from dbo.salesExternalTable \n\n\n\n--******************DML OPERATIONS CANT PERFORM ON EXTERNAL TABLE*************\n\n\n\n\n\n\n\n\n\n",
 					"metadata": {
 						"language": "sql"
 					},
