@@ -1,0 +1,17 @@
+{
+	"name": "SQL_created_external_table",
+	"properties": {
+		"content": {
+			"query": "-- DROP EXTERNAL FILE FORMAT ff_csv\nCREATE EXTERNAL FILE FORMAT ff_csv\nWITH (  \n    FORMAT_TYPE = DELIMITEDTEXT,\n    FORMAT_OPTIONS ( FIELD_TERMINATOR = ',', STRING_DELIMITER = '\"', FIRST_ROW = 2   )\n);\n-- GO\n-- CREATE EXTERNAL FILE FORMAT ff_ParquetFormat WITH (  FORMAT_TYPE = PARQUET );\n-- GO\n-- CREATE EXTERNAL FILE FORMAT ff_DeltaLakeFormat WITH (  FORMAT_TYPE = DELTA );\n-- GO\n------------------------------------------------------------------------------------\nDROP EXTERNAL TABLE salesExternalTable;\n\nCREATE EXTERNAL TABLE salesExternalTable\n(\n    [sale_id]   VARCHAR(50),\n    [product]   VARCHAR(100),\n    [category]  VARCHAR(50),\n    [quantity]  INT,\n    [price]     DECIMAL(18,2),\n    [sale_date] DATE,\n    [region]    VARCHAR(50)\n)\nWITH (\n    LOCATION = 'synapse-file/clintrail_data_files/TA/TA.csv',\n    DATA_SOURCE = ds_stsyn_file_data,\n    FILE_FORMAT = ff_csv\n);\n\n\nselect * from dbo.salesExternalTable\nselect * from dbo.salesExternalTable where product='Laptop'\nselect quantity from dbo.salesExternalTable \n--******************DML OPERATIONS CANT PERFORM ON EXTERNAL TABLE*************",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "db_clintrail_dev",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

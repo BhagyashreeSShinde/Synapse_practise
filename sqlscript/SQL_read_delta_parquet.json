@@ -1,0 +1,17 @@
+{
+	"name": "SQL_read_delta_parquet",
+	"properties": {
+		"content": {
+			"query": "SELECT * FROM OPENROWSET(\n    BULK 'landing/src/CM/ingest_date=2026-07-23/CM_20260723061506.parquet',\n    DATA_SOURCE = 'ds_stsyn_clintrail',\n    FORMAT = 'PARQUET'\n) AS CM;\n\n\nSELECT * FROM OPENROWSET(\n    BULK 'silver/cm',\n    DATA_SOURCE = 'ds_stsyn_clintrail',\n    FORMAT = 'DELTA'\n) AS CM;\n\n\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "db_clintrail_dev",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
