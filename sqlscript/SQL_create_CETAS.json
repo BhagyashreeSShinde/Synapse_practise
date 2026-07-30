@@ -1,0 +1,17 @@
+{
+	"name": "SQL_create_CETAS",
+	"properties": {
+		"content": {
+			"query": "CREATE EXTERNAL TABLE salesExternalTable\n(\n    [sale_id]   VARCHAR(50),\n    [product]   VARCHAR(100),\n    [category]  VARCHAR(50),\n    [quantity]  INT,\n    [price]     DECIMAL(18,2),\n    [sale_date] DATE,\n    [region]    VARCHAR(50)\n)\nWITH (\n    LOCATION = 'synapse-file/clintrail_data_files/TA/TA.csv',\n    DATA_SOURCE = ds_stsyn_file_data,\n    FILE_FORMAT = ff_csv\n);\n\nselect * from dbo.salesExternalTable",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "db_clintrail_dev",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
