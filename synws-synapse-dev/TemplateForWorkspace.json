@@ -1,0 +1,269 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"workspaceName": {
+			"type": "string",
+			"metadata": "Workspace name",
+			"defaultValue": "synws-synapse-dev"
+		},
+		"synws-synapse-dev-WorkspaceDefaultSqlServer_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'synws-synapse-dev-WorkspaceDefaultSqlServer'",
+			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=tcp:synws-synapse-dev.sql.azuresynapse.net,1433;Initial Catalog=@{linkedService().DBName}"
+		},
+		"synws-synapse-dev-WorkspaceDefaultStorage_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://stsynapsedev1999.dfs.core.windows.net"
+		}
+	},
+	"variables": {
+		"workspaceId": "[concat('Microsoft.Synapse/workspaces/', parameters('workspaceName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('workspaceName'), '/synws-synapse-dev-WorkspaceDefaultSqlServer')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"parameters": {
+					"DBName": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlDW",
+				"typeProperties": {
+					"connectionString": "[parameters('synws-synapse-dev-WorkspaceDefaultSqlServer_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/synws-synapse-dev-WorkspaceDefaultStorage')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('synws-synapse-dev-WorkspaceDefaultStorage_properties_typeProperties_url')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/AutoResolveIntegrationRuntime')]",
+			"type": "Microsoft.Synapse/workspaces/integrationRuntimes",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "Managed",
+				"typeProperties": {
+					"computeProperties": {
+						"location": "AutoResolve",
+						"dataFlowProperties": {
+							"computeType": "General",
+							"coreCount": 8,
+							"timeToLive": 0
+						}
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/WorkspaceSystemIdentity')]",
+			"type": "Microsoft.Synapse/workspaces/credentials",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "ManagedIdentity",
+				"typeProperties": {}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL_created_external_table')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "-- DROP EXTERNAL FILE FORMAT ff_csv\nCREATE EXTERNAL FILE FORMAT ff_csv\nWITH (  \n    FORMAT_TYPE = DELIMITEDTEXT,\n    FORMAT_OPTIONS ( FIELD_TERMINATOR = ',', STRING_DELIMITER = '\"', FIRST_ROW = 2   )\n);\n-- GO\n-- CREATE EXTERNAL FILE FORMAT ff_ParquetFormat WITH (  FORMAT_TYPE = PARQUET );\n-- GO\n-- CREATE EXTERNAL FILE FORMAT ff_DeltaLakeFormat WITH (  FORMAT_TYPE = DELTA );\n-- GO\n------------------------------------------------------------------------------------\nDROP EXTERNAL TABLE salesExternalTable;\n\nCREATE EXTERNAL TABLE salesExternalTable\n(\n    [sale_id]   VARCHAR(50),\n    [product]   VARCHAR(100),\n    [category]  VARCHAR(50),\n    [quantity]  INT,\n    [price]     DECIMAL(18,2),\n    [sale_date] DATE,\n    [region]    VARCHAR(50)\n)\nWITH (\n    LOCATION = 'synapse-file/clintrail_data_files/TA/TA.csv',\n    DATA_SOURCE = ds_stsyn_file_data,\n    FILE_FORMAT = ff_csv\n);\n\n\nselect * from dbo.salesExternalTable\nselect * from dbo.salesExternalTable where product='Laptop'\nselect quantity from dbo.salesExternalTable \n--******************DML OPERATIONS CANT PERFORM ON EXTERNAL TABLE*************",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "db_clintrail_dev",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL_dedicated_pool_table_craetion')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE TABLE CustomerDetails (\n    customer_id INT,\n    name VARCHAR(100),\n    city VARCHAR(100),\n    total_spent DECIMAL(10,2)\n)WITH\n(\n    DISTRIBUTION = ROUND_ROBIN,\n    CLUSTERED COLUMNSTORE INDEX\n);\n\nSELECT * FROM CustomerDetails;\n\nINSERT INTO CustomerDetails (customer_id, name, city, total_spent)\nVALUES (1, 'Rahul', 'Pune', 1500.50);\n\nINSERT INTO CustomerDetails (customer_id, name, city, total_spent)\nVALUES (2, 'Sneha', 'Mumbai', 2450.75);\n\nINSERT INTO CustomerDetails (customer_id, name, city, total_spent)\nVALUES (3, 'Amit', 'Delhi', 3200.00);\n\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "dsp_dev001",
+						"poolName": "dsp_dev001"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL_dsqlp_Replicate_Copy_into')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "--small table sathi we used ll table\n\nCREATE TABLE dbo.TS\n(\n    STUDYID     VARCHAR(200),\n    DOMAIN      VARCHAR(200),\n    TSPARMCD    VARCHAR(200),\n    TSPARM      VARCHAR(200),\n    TSVAL       VARCHAR(200),\n    MODIFIED_TS VARCHAR(200)\n)\nWITH\n(\n    DISTRIBUTION = REPLICATE\n);\n\n\nCOPY INTO [dbo].[ts] \nFROM 'https://stsynapsedev1999.blob.core.windows.net/synapse-file/clintrail_data_files/TS/TS.csv'\nWITH (\n    FIELDTERMINATOR = ',',\n    ROWTERMINATOR = '0x0A'\n)\nOPTION (LABEL = 'COPY: dbo.TS');\n\n\nSELECT COUNT(*) FROM TS;\n\nDBCC PDW_SHOWSPACEUSED('dbo.TS')\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "dsp_dev001",
+						"poolName": "dsp_dev001"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL_dsqlp_RoundRobin_Copy_into')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE TABLE dbo.LB\n(\n    STUDYID     VARCHAR(200),\n    DOMAIN      VARCHAR(200),\n    USUBJID     VARCHAR(200),\n    LBSEQ       VARCHAR(200),\n    LBTESTCD    VARCHAR(200),\n    LBTEST      VARCHAR(200),\n    LBCAT       VARCHAR(200),\n    LBORRES     VARCHAR(200),\n    LBORRESU    VARCHAR(200),\n    LBORNRLO    VARCHAR(200),\n    LBORNRHI    VARCHAR(200),\n    LBNRIND     VARCHAR(200),\n    VISITNUM    VARCHAR(200),\n    VISIT       VARCHAR(200),\n    LBDTC       VARCHAR(200),\n    MODIFIED_TS VARCHAR(200)\n)\nWITH\n(\n    DISTRIBUTION = ROUND_ROBIN\n);\n\n\nCOPY INTO [dbo].[lb] \nFROM 'https://stsynapsedev1999.blob.core.windows.net/synapse-file/clintrail_data_files/LB/LB.csv'\nWITH (\n    FIELDTERMINATOR = ',',\n    ROWTERMINATOR = '0x0A'\n)\nOPTION (LABEL = 'COPY: dbo.LB');\n\n\nSELECT COUNT(*) FROM LB;\n\nDBCC PDW_SHOWSPACEUSED('dbo.LB')\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "dsp_dev001",
+						"poolName": "dsp_dev001"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL_dsqlp_hash_Key_Copy_into')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "-- How to distribute the data across the compute node\n-- DISTRIBUTION Types\n-- 1. HASH KEY --- We need to specify the column=assured us same data will be in the same compute \n-- 2. ROUND_ROBIN==\n-- 3. REPLICATE\n--CRAETE TABLE FOR HASH KEY\nCREATE TABLE dbo.VS\n(\n    STUDYID VARCHAR(200),\n    DOMAIN VARCHAR(200),\n    USUBJID VARCHAR(200),\n    VSSEQ VARCHAR(200),\n    VSTESTCD VARCHAR(200),\n    VSTEST VARCHAR(200),\n    VSORRES VARCHAR(200),\n    VSORRESU VARCHAR(200),\n    VISITNUM VARCHAR(200),\n    VISIT VARCHAR(200),\n    VSDTC VARCHAR(200),\n    MODIFIED_TS VARCHAR(200)\n)\nWITH\n(\n    DISTRIBUTION = HASH(USUBJID),\n    CLUSTERED COLUMNSTORE INDEX\n);\n\n\nSELECT COUNT(*) FROM VS;\n\n--COPY DATA FROM ADLS\nCOPY INTO [dbo].[vs] \nFROM 'https://stsynapsedev1999.blob.core.windows.net/synapse-file/clintrail_data_files/VS/VS.csv'\nWITH (\n    FIELDTERMINATOR = ',',\n    ROWTERMINATOR = '0x0A'\n)\nOPTION (LABEL = 'COPY: dbo.VS');\n\n--SEE HOW IT DISTRIBUTED\nDBCC PDW_SHOWSPACEUSED('dbo.VS')\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "dsp_dev001",
+						"poolName": "dsp_dev001"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL_read_delta_parquet')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "SELECT * FROM OPENROWSET(\n    BULK 'landing/src/CM/ingest_date=2026-07-23/CM_20260723061506.parquet',\n    DATA_SOURCE = 'ds_stsyn_clintrail',\n    FORMAT = 'PARQUET'\n) AS CM;\n\n\nSELECT * FROM OPENROWSET(\n    BULK 'silver/cm',\n    DATA_SOURCE = 'ds_stsyn_clintrail',\n    FORMAT = 'DELTA'\n) AS CM;\n\n\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "db_clintrail_dev",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL_read_file_data_csv')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "\nSELECT * FROM OPENROWSET\n  (\n      BULK '/synapse-file/clintrail_data_files/TA/TA.csv',\n      DATA_SOURCE = 'ds_stsyn_file_data',\n      FORMAT = 'CSV',\n      PARSER_VERSION = '2.0',\n      HEADER_ROW = TRUE\n  )AS TA\n\nSELECT * FROM OPENROWSET\n  (\n      BULK '/synapse-file/clintrail_data_files/TA/TA.csv',\n      DATA_SOURCE = 'ds_stsyn_file_data',\n      FORMAT = 'CSV',\n      PARSER_VERSION = '2.0',\n      HEADER_ROW = TRUE\n  )AS TA WHERE price<100\n\n  SELECT *,UPPER(product)AS newprod FROM OPENROWSET\n  (\n      BULK '/synapse-file/clintrail_data_files/TA/TA.csv',\n      DATA_SOURCE = 'ds_stsyn_file_data',\n      FORMAT = 'CSV',\n      PARSER_VERSION = '2.0',\n      HEADER_ROW = TRUE\n  )AS TA\n  \n  \n  SELECT * FROM OPENROWSET\n  (\n      BULK '/synapse-file/clintrail_data_files/TS/TS.csv',\n      DATA_SOURCE = 'ds_stsyn_file_data',\n      FORMAT = 'CSV',\n      PARSER_VERSION = '2.0',\n      HEADER_ROW = TRUE\n  )AS TS\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "db_clintrail_dev",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Serverless_SQLpool_setup_database')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE DATABASE db_clintrail_dev;\nuse db_clintrail_dev;\n-- create master key that will protect the credentials:\nCREATE MASTER KEY ENCRYPTION BY PASSWORD = 'Clintraildev@1999'\n\n-- create credentials for containers in our demo storage account\nCREATE DATABASE SCOPED CREDENTIAL cred_db_clintrail_dev\nWITH IDENTITY = 'Managed Identity';\n\n--SECRET = 'sv=2022-11-02&ss=b&srt=co&sp=rl&se=2042-11-26T17:40:55Z&st=2024-11-24T09:40:55Z&spr=https&sig=DKZDuSeZhuCWP9IytWLQwu9shcI5pTJ%2Fw5Crw6fD%2BC8%3D'\n\n\nGO\nCREATE EXTERNAL DATA SOURCE ds_stsyn_file_data\nWITH (\n    LOCATION = 'https://stsynapsedev1999.blob.core.windows.net',\n    CREDENTIAL = cred_db_clintrail_dev\n);\n\nCREATE EXTERNAL DATA SOURCE ds_stsyn_clintrail\nWITH (\n    LOCATION = 'https://stclinicaltraildev.blob.core.windows.net',\n    CREDENTIAL = cred_db_clintrail_dev\n);\n\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "db_clintrail_dev",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/dsp_dev001')]",
+			"type": "Microsoft.Synapse/workspaces/sqlPools",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"collation": "SQL_Latin1_General_CP1_CI_AS",
+				"maxSizeBytes": 263882790666240,
+				"annotations": []
+			},
+			"dependsOn": [],
+			"location": "centralindia"
+		}
+	]
+}
