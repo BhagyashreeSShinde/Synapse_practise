@@ -2,7 +2,7 @@
 	"name": "SQL_create_CETAS",
 	"properties": {
 		"content": {
-			"query": "CREATE EXTERNAL TABLE salesExternalTable\n(\n    [sale_id]   VARCHAR(50),\n    [product]   VARCHAR(100),\n    [category]  VARCHAR(50),\n    [quantity]  INT,\n    [price]     DECIMAL(18,2),\n    [sale_date] DATE,\n    [region]    VARCHAR(50)\n)\nWITH (\n    LOCATION = 'synapse-file/clintrail_data_files/TA/TA.csv',\n    DATA_SOURCE = ds_stsyn_file_data,\n    FILE_FORMAT = ff_csv\n);\n\nselect * from dbo.salesExternalTable",
+			"query": "CREATE EXTERNAL TABLE salesExternalTable\n(\n    [sale_id]   VARCHAR(50),\n    [product]   VARCHAR(100),\n    [category]  VARCHAR(50),\n    [quantity]  INT,\n    [price]     DECIMAL(18,2),\n    [sale_date] DATE,\n    [region]    VARCHAR(50)\n)\nWITH (\n    LOCATION = 'synapse-file/clintrail_data_files/TA/TA.csv',\n    DATA_SOURCE = ds_stsyn_file_data,\n    FILE_FORMAT = ff_csv\n);\n\nselect * from dbo.salesExternalTable\n\n---------------------------------------CETAS------------------------------------------------------------\nCREATE SCHEMA landing\n\nCREATE EXTERNAL TABLE landing.salesExternalTable\nWITH (\n    LOCATION = 'synapse-file/landing/TA',\n    DATA_SOURCE = ds_stsyn_file_data,\n    FILE_FORMAT = ff_ParquetFormat\n)\nAS\nSELECT * FROM  dbo.salesExternalTable\n\n\nSELECT * FROM landing.salesExternalTable\n",
 			"metadata": {
 				"language": "sql"
 			},
